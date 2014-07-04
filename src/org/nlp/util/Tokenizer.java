@@ -13,8 +13,8 @@ public class Tokenizer {
 
 //    private String[] tokens;
 //    int currentIndex;
-    private List<String> tokens;
-    private ListIterator<String> tokenIter;
+    protected List<String> tokens;
+    protected ListIterator<String> tokenIter;
 
     public Tokenizer(){
         tokens = new LinkedList<String>();

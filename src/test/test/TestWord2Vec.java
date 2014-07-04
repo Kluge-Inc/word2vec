@@ -19,21 +19,24 @@ public class TestWord2Vec {
 
         Word2Vec wv = new Word2Vec.Factory()
                 .setMethod(Word2Vec.Method.Skip_Gram)
-                .setNumOfThread(1).build();
+                .setNumOfThread(5).build();
 
-        try (BufferedReader br =
-                     new BufferedReader(new FileReader(textFilePath))) {
-            int lineCount = 0;
-            for (String line = br.readLine(); line != null;
-                    line = br.readLine()){
-                wv.readTokens(new Tokenizer(line, " "));
-//                System.out.println(line);
-                lineCount ++;
+        File folder = new File(textFilePath);
+        for (File file : folder.listFiles()) {
+            try (BufferedReader br =
+                    new BufferedReader(new FileReader(file))) {
+                int lineCount = 0;
+                for (String line = br.readLine(); line != null;
+                     line = br.readLine()) {
+                    wv.readTokens(new Tokenizer(line, " "));
+                    //                System.out.println(line);
+                    lineCount++;
 
+                }
+
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
             }
-
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
         }
 
         wv.training();
@@ -45,7 +48,7 @@ public class TestWord2Vec {
         VectorModel vm = VectorModel.loadFromFile(modelFilePath);
         Set<VectorModel.WordScore> result1 = Collections.emptySet();
 
-        result1 = vm.similar("亲");
+        result1 = vm.similar("Reebok");
         for (VectorModel.WordScore we : result1){
             System.out.println(we.name + " :\t" + we.score);
         }
@@ -53,9 +56,9 @@ public class TestWord2Vec {
 
     public static void main(String[] args){
 
-        String textFilePath = "D:/data/corpus.dat";
-        String modelFilePath = "D:/data/corpus.nn";
-        readByJava(textFilePath, modelFilePath);
+        String textFilePath = "/home/giko/data";
+        String modelFilePath = "/home/giko/data/corpus.nn";
+        //readByJava(textFilePath, modelFilePath);
         testVector(modelFilePath);
     }
 
