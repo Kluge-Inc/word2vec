@@ -143,42 +143,16 @@ public class VectorModel {
      * @return 相近词集，若模型不包含词word，则返回空集
      */
     public Set<WordScore> similar(String queryWord){
-
-        float[] center = wordMap.get(queryWord);
-        if (center == null){
-            return Collections.emptySet();
-        }
-
-        int resultSize = wordMap.size() < topNSize ? wordMap.size() : topNSize;
-        TreeSet<WordScore> result = new TreeSet<WordScore>();
-        for (int i = 0; i < resultSize + 1; i++){
-            result.add(new WordScore("^_^", -Float.MAX_VALUE));
-        }
-        float minDist = -Float.MAX_VALUE;
-        for (Map.Entry<String, float[]> entry : wordMap.entrySet()){
-            float[] vector = entry.getValue();
-            float dist = 0;
-            for (int i = 0; i < vector.length; i++){
-                dist += center[i] * vector[i];
-            }
-            if (dist > minDist){
-                result.add(new WordScore(entry.getKey(), dist));
-                result.pollLast();
-                minDist = result.last().score;
-            }
-        }
-        result.pollFirst();
-
-        return result;
+        return similar(getModel(queryWord));
     }
 
     /**
      * 获取与词向量center最相近topNSize个词
-     * @param center 词向量
+     * @param model vector representation of word
      * @return 相近词集
      */
-    public Set<WordScore> similar(float[] center){
-        if (center == null || center.length != vectorSize){
+    public Set<WordScore> similar(WordModel model) {
+        if (model.getVector() == null || model.getVector().length != vectorSize){
             return Collections.emptySet();
         }
 
@@ -192,16 +166,22 @@ public class VectorModel {
             float[] vector = entry.getValue();
             float dist = 0;
             for (int i = 0; i < vector.length; i++){
-                dist += center[i] * vector[i];
+                dist += model.getVector()[i] * vector[i];
             }
             if (dist > minDist){
                 result.add(new WordScore(entry.getKey(), dist));
                 minDist = result.pollLast().score;
             }
         }
-//        result.pollFirst();
 
         return result;
+    }
+    
+    public WordModel getModel(String word) {
+        if (word.equals("")) {
+            return new WordModel(word, new float[vectorSize]);
+        }
+        return new WordModel(word, wordMap.get(word));
     }
 
     /**
@@ -212,43 +192,16 @@ public class VectorModel {
      * @param word2 词
      * @return 与结果最相近的前topNSize个词
      */
-    public TreeSet<WordScore> analogy(String word0, String word1, String word2) {
-        float[] wv0 = wordMap.get(word0);
-        float[] wv1 = wordMap.get(word1);
-        float[] wv2 = wordMap.get(word2);
+    public Set<WordScore> analogy(String word0, String word1, String word2) {
+        WordModel wv0 = getModel(word0);
+        WordModel wv1 = getModel(word1);
+        WordModel wv2 = getModel(word2);
 
         if (wv1 == null || wv2 == null || wv0 == null) {
             return null;
         }
-        float[] center = new float[vectorSize];
-        for (int i = 0; i < vectorSize; i++) {
-            center[i] = wv1[i] - wv0[i] + wv2[i];
-        }
-
-        int resultSize = wordMap.size() < topNSize ? wordMap.size() : topNSize;
-        TreeSet<WordScore> result = new TreeSet<WordScore>();
-        for (int i = 0; i < resultSize; i++){
-            result.add(new WordScore("^_^", -Float.MAX_VALUE));
-        }
-        String name;
-        float minDist = -Float.MAX_VALUE;
-        for (Map.Entry<String, float[]> entry : wordMap.entrySet()){
-            name = entry.getKey();
-            if (name.equals(word1) || name.equals((word2))){
-                continue;
-            }
-            float[] vector = entry.getValue();
-            float dist = 0;
-            for (int i = 0; i < vector.length; i++){
-                dist += center[i] * vector[i];
-            }
-            if (dist > minDist){
-                result.add(new WordScore(entry.getKey(), dist));
-                result.pollLast();
-                minDist = result.last().score;
-            }
-        }
-        return result;
+        WordModel center = wv1.substract(wv0).add(wv2);
+        return similar(center);
     }
 
     public class WordScore implements Comparable<WordScore> {
